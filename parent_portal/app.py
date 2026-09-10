@@ -11,7 +11,6 @@ from supabase import create_client, Client
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# 連接您現有的 Supabase 雲端資料庫
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zrkyfuhbtrfeklltgbbc.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpya3lmdWhidHJmZWtsbHRnYmJjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODcxMTkyOCwiZXhwIjoyMTA0Mjg3OTI4fQ.ZE0gFAhlxJXmd8UdOfqwinaYhm9zHbSLr5SdBXL1NEU")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -22,6 +21,8 @@ COOKIE_NAME = "ec_session"
 
 app = FastAPI(title="EC Productions Parent Portal")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.cache = None  # 關閉快取以避開新版 Jinja2 dict key 衝突
+
 if (BASE_DIR / "static").is_dir():
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
