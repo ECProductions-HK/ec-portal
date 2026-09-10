@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ title }} · EC Productions</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <header class="bar">
+    <div>
+      <a href="/gallery">← 返回相簿列表</a>
+      <h1>{{ title }}</h1>
+    </div>
+  </header>
+  <section class="grid dense">
+    {% for p in photos %}
+    <a class="card" href="{{ p.watermarked_url }}" target="_blank">
+      <img src="{{ p.watermarked_url }}" alt="{{ p.filename }}" loading="lazy"/>
+    </a>
+    {% endfor %}
+  </section>
+</body>
+</html>
