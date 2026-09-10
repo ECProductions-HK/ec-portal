@@ -21,7 +21,7 @@ COOKIE_NAME = "ec_session"
 
 app = FastAPI(title="EC Productions Parent Portal")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-templates.env.cache = None  # 關閉快取以避開新版 Jinja2 dict key 衝突
+templates.env.cache = None
 
 if (BASE_DIR / "static").is_dir():
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -41,8 +41,7 @@ def get_photos_for_album(album_id: str) -> list[dict[str, str]]:
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("invalid.html", {
-        "request": request, 
+    return templates.TemplateResponse(request, "invalid.html", {
         "title": "請掃學生卡上的 QR Code", 
         "detail": "此網站不提供公開目錄。請使用派發的實體卡進入。"
     })
@@ -52,8 +51,7 @@ def home(request: Request):
 def qr_login(token: str, request: Request):
     album = get_album_by_token(token)
     if not album:
-        return templates.TemplateResponse("invalid.html", {
-            "request": request, 
+        return templates.TemplateResponse(request, "invalid.html", {
             "title": "無效或未啟用的 QR Code", 
             "detail": "請確認卡片是否正確，或聯絡 EC Productions。"
         }, status_code=404)
@@ -91,8 +89,7 @@ def gallery(request: Request):
         "cover": photos[0]["watermarked_url"] if photos else None,
         "is_group": session_data["kind"] == "group"
     }]
-    return templates.TemplateResponse("gallery.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "gallery.html", {
         "student_title": session_data["title"],
         "albums": albums
     })
@@ -111,8 +108,7 @@ def album_page(album_id: str, request: Request):
         raise HTTPException(status_code=403, detail="Forbidden")
         
     photos = get_photos_for_album(album_id)
-    return templates.TemplateResponse("album.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "album.html", {
         "album_id": album_id,
         "title": session_data["title"],
         "photos": photos
