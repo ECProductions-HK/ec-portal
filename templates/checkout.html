@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>選擇列印規格與付款 · EC Productions</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <header class="bar">
+    <div>
+      <a href="javascript:history.back()" class="btn-link">← 返回重新選相</a>
+      <h1 style="margin-top:4px;">規格確認與付款：{{ student_title }}</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <form action="/order/submit" method="post" enctype="multipart/form-data" class="card p-24">
+      <input type="hidden" name="album_id" value="{{ album_id }}">
+
+      <h3 style="margin-top:0;">已選取相片規格設定</h3>
+      <p class="muted">請為每張勾選的相片選擇您需要的實體印刷規格：</p>
+
+      <div class="options-list">
+        {% for p in selected_photos %}
+        <div class="item-row">
+          <span class="file-name">{{ p }}</span>
+          <select name="item_data" class="select-field" data-is-group="{{ 'true' if is_group else 'false' }}">
+            {% if is_group %}
+              <option value="{{ p }}|4r">4R 一張 ($50)</option>
+              <option value="{{ p }}|5r">5R 一張 ($100)</option>
+            {% else %}
+              <option value="{{ p }}|dozen1">一打 ($12)</option>
+              <option value="{{ p }}|dozen2">兩打 ($20)</option>
+            {% endif %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="total-box mt-20">
+        <strong>預計總金額：<span id="total-price" style="color:var(--brand);">0</span> HKD</strong>
+      </div>
+
+      <hr class="divider"/>
+
+      <h3 style="margin-bottom:6px;">付款方式 (PayMe / 轉數快 FPS)</h3>
+      <p class="muted" style="margin-top:0;">請轉帳至以下戶口，並上傳截圖：</p>
+      <ul class="payment-info">
+        <li><strong>轉數快 FPS ID / 電話：</strong> 9123 4567 (EC PRODUCTIONS)</li>
+      </ul>
+
+      <div class="form-group mt-20">
+        <label><strong>聯絡電話 (WhatsApp)：</strong></label>
+        <input type="tel" name="contact_phone" required placeholder="例如：98765432" class="input-field"/>
+      </div>
+
+      <div class="form-group mt-12">
+        <label><strong>上傳轉帳收據截圖：</strong></label>
+        <input type="file" name="receipt" accept="image/*" required class="input-field" style="padding: 8px 0; border:none;"/>
+      </div>
+
+      <button type="submit" class="btn-primary mt-20" style="width:100%; padding: 12px;">提交訂單 (通知公司印刷發貨)</button>
+    </form>
+  </main>
+
+  <script>
+    const selects = document.querySelectorAll('.select-field');
+    const totalPriceSpan = document.getElementById('total-price');
+
+    function calculateTotal() {
+      let total = 0;
+      selects.forEach(sel => {
+        const val = sel.value;
+        const isGroup = sel.getAttribute('data-is-group') === 'true';
+        if (!isGroup) {
+          total += (val.endsWith('dozen2') ? 20 : 12);
+        } else {
+          total += (val.endsWith('5r') ? 100 : 50);
+        }
+      });
+      totalPriceSpan.textContent = '$' + total;
+    }
+
+    selects.forEach(sel => sel.addEventListener('change', calculateTotal));
+    calculateTotal();
+  </script>
+</body>
+</html>
