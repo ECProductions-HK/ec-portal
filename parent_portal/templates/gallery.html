@@ -3,32 +3,31 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>我的相簿 · EC Productions</title>
+  <title>{{ student_title }} 的相簿 · EC Productions</title>
   <link rel="stylesheet" href="/static/style.css"/>
 </head>
 <body>
   <header class="bar">
-    <div>
-      <p class="brand">EC Productions</p>
-      <h1>{{ student_title }} 的相簿</h1>
-    </div>
-    <form method="post" action="/logout"><button type="submit">登出</button></form>
+    <h1>{{ student_title }} 的相簿</h1>
+    <form action="/logout" method="post"><button type="submit" class="btn-link">登出</button></form>
   </header>
-  <section class="grid">
-    {% for a in albums %}
-    <a class="card" href="/gallery/{{ a.id }}">
-      {% if a.cover %}
-      <img src="{{ a.cover }}" alt=""/>
-      {% else %}
-      <div class="empty">未有相片</div>
-      {% endif %}
-      <div class="info">
-        <strong>{{ a.title }}</strong>
-        <span>{{ "團體／活動相" if a.is_group else "個人專屬相" }} · {{ a.count }} 張</span>
-      </div>
-    </a>
-    {% endfor %}
-  </section>
-  <p class="footnote">提示：畫面顯示為防盜浮水印預覽圖。選定並確認後將提供原圖下載。</p>
+  <main class="container" style="max-width: 1100px;">
+    <div class="grid">
+      {% for a in albums %}
+      <!-- 這裡就是關鍵！一定要連到 /gallery/album_id 才會進入選相畫面 -->
+      <a href="/gallery/{{ a.id }}" class="card album-card">
+        {% if a.cover %}
+        <img src="{{ a.cover }}" alt="{{ a.title }}" loading="lazy"/>
+        {% else %}
+        <div style="aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; background:#eaecf0;" class="muted">無相片</div>
+        {% endif %}
+        <div class="album-info">
+          <h2>{{ a.title }}</h2>
+          <p class="muted">{{ a.count }} 張相片 (點擊進入選相)</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </main>
 </body>
 </html>
