@@ -9,16 +9,50 @@
 <body>
   <header class="bar">
     <div>
-      <a href="/gallery">← 返回相簿列表</a>
-      <h1>{{ title }}</h1>
+      <a href="/gallery" class="btn-link">← 返回相簿列表</a>
+      <h1 style="margin-top:4px;">{{ title }} ({{ "班相／團體相" if is_group else "個人相" }})</h1>
     </div>
   </header>
-  <section class="grid dense">
-    {% for p in photos %}
-    <a class="card" href="{{ p.watermarked_url }}" target="_blank">
-      <img src="{{ p.watermarked_url }}" alt="{{ p.filename }}" loading="lazy"/>
-    </a>
-    {% endfor %}
-  </section>
+
+  <form action="/cart/checkout" method="post">
+    <input type="hidden" name="album_id" value="{{ album_id }}">
+    
+    <section class="grid">
+      {% for p in photos %}
+      <div class="card photo-card">
+        <label class="photo-label">
+          <input type="checkbox" name="selected_photos" value="{{ p.filename }}" class="photo-checkbox"/>
+          <img src="{{ p.watermarked_url }}" alt="{{ p.filename }}" loading="lazy"/>
+        </label>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- 底部懸浮結帳列 -->
+    <div class="sticky-bar">
+      <div class="content-between">
+        <span id="selected-count" style="font-weight: 500;">已選取 0 張相片</span>
+        <button type="submit" class="btn-primary" id="checkout-btn" disabled>前往選擇規格與結帳</button>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    const checkboxes = document.querySelectorAll('.photo-checkbox');
+    const countSpan = document.getElementById('selected-count');
+    const checkoutBtn = document.getElementById('checkout-btn');
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const checkedCount = document.querySelectorAll('.photo-checkbox:checked').length;
+        countSpan.textContent = `已選取 ${checkedCount} 張相片`;
+        if (checkedCount > 0) {
+          checkoutBtn.removeAttribute('disabled');
+        } else {
+          checkoutBtn.setAttribute('disabled', 'true');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
