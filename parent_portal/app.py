@@ -20,13 +20,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "ec-production-super-secret-key-change
 SESSION_DAYS = 30
 COOKIE_NAME = "ec_session"
 
-# 公司接收 WhatsApp 訂單的電話號碼（已直接寫入您的號碼）
 OPS_WHATSAPP = "85292653339"
 
 app = FastAPI(title="EC Productions Parent Portal")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.cache = None
 
+# 自動尋找 static 資料夾
 static_dir = BASE_DIR / "static"
 if not static_dir.is_dir() and (BASE_DIR.parent / "static").is_dir():
     static_dir = BASE_DIR.parent / "static"
@@ -88,19 +88,7 @@ def gallery(request: Request):
         session_data = serializer().loads(raw)
     except:
         return RedirectResponse("/", status_code=302)
-
-    photos = get_photos_for_album(session_data["album_id"])
-    albums = [{
-        "id": session_data["album_id"],
-        "title": session_data["title"],
-        "count": len(photos),
-        "cover": photos[0]["watermarked_url"] if photos else None,
-        "is_group": session_data["kind"] == "group"
-    }]
-    return templates.TemplateResponse(request, "gallery.html", {
-        "student_title": session_data["title"],
-        "albums": albums
-    })
+    return RedirectResponse(f"/gallery/{session_data['album_id']}", status_code=302)
 
 @app.get("/gallery/{album_id}", response_class=HTMLResponse)
 def album_page(album_id: str, request: Request):
@@ -163,36 +151,48 @@ async def order_submit(
     except:
         return RedirectResponse("/", status_code=302)
 
-    is_group = session_data["kind"] == "group"
     total_amount = 0
     parsed_items = []
 
     for entry in item_data:
         parts = entry.split("|")
-        if len(parts) != 2:
-            continue
-        filename, opt = parts
-        
-        if not is_group:
-            if opt == "dozen2":
-                price = 20
-                opt_name = "兩打 (20 HKD)"
-            else:
-                price = 12
-                opt_name = "一打 (12 HKD)"
+        if len(parts) == 3:
+            filename, opt, qty_str = parts
+            try:
+                qty = int(qty_str)
+            except ValueError:
+                qty = 1
+        elif len(parts) == 2:
+            filename, opt = parts
+            qty = 1
         else:
-            if opt == "5r":
-                price = 100
-                opt_name = "5R 一張 (100 HKD)"
-            else:
-                price = 50
-                opt_name = "4R 一張 (50 HKD)"
-                
-        total_amount += price
+            continue
+            
+        if qty <= 0:
+            continue
+        
+        # 依照最新 Excel 價格設定 ($7, $10, $13, $15)
+        if opt == "5r_lam":
+            price = 7
+            opt_name = "5R過膠"
+        elif opt == "5r_frame":
+            price = 10
+            opt_name = "5R過膠連框裱"
+        elif opt == "8r_lam":
+            price = 13
+            opt_name = "8R過膠"
+        elif opt == "8r_frame":
+            price = 15
+            opt_name = "8R過膠連框裱"
+        else:
+            price = 7
+            opt_name = "5R過膠"
+            
+        total_amount += price * qty
         parsed_items.append({
             "filename": filename,
-            "option_name": opt_name,
-            "price": price
+            "option_name": f"{opt_name} x {qty}" if qty > 1 else opt_name,
+            "price": price * qty
         })
 
     receipt_filename = f"receipts/{uuid.uuid4()}_{receipt.filename}"
