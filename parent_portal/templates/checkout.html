@@ -1,89 +1,144 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>選擇列印規格與付款 · EC Productions</title>
-  <link rel="stylesheet" href="/static/style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ student_title }} - 選擇相片規格與數量</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .qty-row { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e9ecef; }
+        .qty-select { padding: 6px 10px; font-size: 15px; border-radius: 6px; border: 1px solid #ccc; background: white; }
+    </style>
 </head>
 <body>
-  <header class="bar">
-    <div>
-      <a href="javascript:history.back()" class="btn-link">← 返回重新選相</a>
-      <h1 style="margin-top:4px;">規格確認與付款：{{ student_title }}</h1>
+
+    <div class="header">
+        <h2>{{ student_title }} - 選擇規格與數量</h2>
     </div>
-  </header>
 
-  <main class="container">
-    <form action="/order/submit" method="post" enctype="multipart/form-data" class="card p-24">
-      <input type="hidden" name="album_id" value="{{ album_id }}">
+    <div class="container" style="padding-bottom: 130px;">
+        <form action="/order/submit" method="POST" enctype="multipart/form-data" id="order-form">
+            <input type="hidden" name="album_id" value="{{ album_id }}">
 
-      <h3 style="margin-top:0;">已選取相片規格設定</h3>
-      <p class="muted">請為每張勾選的相片選擇您需要的實體印刷規格：</p>
+            <!-- 動態隱藏輸入框會在這裡生成並傳給後端 -->
+            <div id="hidden-inputs-container"></div>
 
-      <div class="options-list">
-        {% for p in selected_photos %}
-        <div class="item-row">
-          <span class="file-name">{{ p }}</span>
-          <select name="item_data" class="select-field" data-is-group="{{ 'true' if is_group else 'false' }}">
-            {% if is_group %}
-              <option value="{{ p }}|4r">4R 一張 ($50)</option>
-              <option value="{{ p }}|5r">5R 一張 ($100)</option>
-            {% else %}
-              <option value="{{ p }}|dozen1">一打 ($12)</option>
-              <option value="{{ p }}|dozen2">兩打 ($20)</option>
-            {% endif %}
-          </select>
-        </div>
-        {% endfor %}
-      </div>
+            {% for photo in selected_photos %}
+            <div class="photo-card" style="padding: 15px; margin-bottom: 20px;">
+                <div class="photo-title">檔案：{{ photo }}</div>
+                
+                <div style="display: flex; flex-direction: column;">
+                    <div class="qty-row">
+                        <div><strong>5R 過膠</strong> <span style="color: #e53935; font-weight: bold;">($7)</span></div>
+                        <select class="qty-select" data-photo="{{ photo }}" data-opt="5r_lam" data-price="7" onchange="recalculate()">
+                            <option value="0" selected>0 張</option>
+                            <option value="1">1 張</option>
+                            <option value="2">2 張</option>
+                            <option value="3">3 張</option>
+                            <option value="4">4 張</option>
+                            <option value="5">5 張</option>
+                        </select>
+                    </div>
+                    
+                    <div class="qty-row">
+                        <div><strong>5R 過膠連框裱</strong> <span style="color: #e53935; font-weight: bold;">($10)</span></div>
+                        <select class="qty-select" data-photo="{{ photo }}" data-opt="5r_frame" data-price="10" onchange="recalculate()">
+                            <option value="0" selected>0 張</option>
+                            <option value="1">1 張</option>
+                            <option value="2">2 張</option>
+                            <option value="3">3 張</option>
+                            <option value="4">4 張</option>
+                            <option value="5">5 張</option>
+                        </select>
+                    </div>
+                    
+                    <div class="qty-row">
+                        <div><strong>8R 過膠</strong> <span style="color: #e53935; font-weight: bold;">($13)</span></div>
+                        <select class="qty-select" data-photo="{{ photo }}" data-opt="8r_lam" data-price="13" onchange="recalculate()">
+                            <option value="0" selected>0 張</option>
+                            <option value="1">1 張</option>
+                            <option value="2">2 張</option>
+                            <option value="3">3 張</option>
+                            <option value="4">4 張</option>
+                            <option value="5">5 張</option>
+                        </select>
+                    </div>
+                    
+                    <div class="qty-row">
+                        <div><strong>8R 過膠連框裱</strong> <span style="color: #e53935; font-weight: bold;">($15)</span></div>
+                        <select class="qty-select" data-photo="{{ photo }}" data-opt="8r_frame" data-price="15" onchange="recalculate()">
+                            <option value="0" selected>0 張</option>
+                            <option value="1">1 張</option>
+                            <option value="2">2 張</option>
+                            <option value="3">3 張</option>
+                            <option value="4">4 張</option>
+                            <option value="5">5 張</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
 
-      <div class="total-box mt-20">
-        <strong>預計總金額：<span id="total-price" style="color:var(--brand);">0</span> HKD</strong>
-      </div>
+            <div style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;">
+                <h3 style="margin-top: 0; font-size: 16px; color: #2c3e50;">聯絡與付款</h3>
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 14px; margin-bottom: 6px; font-weight: bold;">WhatsApp 聯絡電話：</label>
+                    <input type="text" name="contact_phone" required placeholder="例如: 91234567" style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 14px; margin-bottom: 6px; font-weight: bold;">上傳轉帳收據截圖：</label>
+                    <input type="file" name="receipt" required accept="image/*" style="width: 100%; padding: 6px 0;">
+                </div>
+            </div>
 
-      <hr class="divider"/>
+            <div class="cart-bar">
+                <div>
+                    <div style="font-size: 12px; color: #666;">總計金額</div>
+                    <div class="total-price" id="grand-total">$0</div>
+                </div>
+                <button type="submit" class="checkout-btn" id="submit-btn" style="background: #25D366;" disabled>
+                    📲 提交訂單
+                </button>
+            </div>
+        </form>
+    </div>
 
-      <h3 style="margin-bottom:6px;">付款方式 (PayMe / 轉數快 FPS)</h3>
-      <p class="muted" style="margin-top:0;">請轉帳至以下戶口，並上傳截圖：</p>
-      <ul class="payment-info">
-        <li><strong>轉數快 FPS ID / 電話：</strong> 9123 4567 (EC PRODUCTIONS)</li>
-      </ul>
+    <script>
+        function recalculate() {
+            const selects = document.querySelectorAll('.qty-select');
+            let total = 0;
+            const container = document.getElementById('hidden-inputs-container');
+            container.innerHTML = ''; // 清空舊的隱藏欄位
 
-      <div class="form-group mt-20">
-        <label><strong>聯絡電話 (WhatsApp)：</strong></label>
-        <input type="tel" name="contact_phone" required placeholder="例如：98765432" class="input-field"/>
-      </div>
+            selects.forEach(sel => {
+                const qty = parseInt(sel.value);
+                if (qty > 0) {
+                    const photo = sel.getAttribute('data-photo');
+                    const opt = sel.getAttribute('data-opt');
+                    const price = parseInt(sel.getAttribute('data-price'));
+                    
+                    total += price * qty;
 
-      <div class="form-group mt-12">
-        <label><strong>上傳轉帳收據截圖：</strong></label>
-        <input type="file" name="receipt" accept="image/*" required class="input-field" style="padding: 8px 0; border:none;"/>
-      </div>
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'item_data';
+                    input.value = `${photo}|${opt}|${qty}`;
+                    container.appendChild(input);
+                }
+            });
 
-      <button type="submit" class="btn-primary mt-20" style="width:100%; padding: 12px;">提交訂單 (通知公司印刷發貨)</button>
-    </form>
-  </main>
-
-  <script>
-    const selects = document.querySelectorAll('.select-field');
-    const totalPriceSpan = document.getElementById('total-price');
-
-    function calculateTotal() {
-      let total = 0;
-      selects.forEach(sel => {
-        const val = sel.value;
-        const isGroup = sel.getAttribute('data-is-group') === 'true';
-        if (!isGroup) {
-          total += (val.endsWith('dozen2') ? 20 : 12);
-        } else {
-          total += (val.endsWith('5r') ? 100 : 50);
+            document.getElementById('grand-total').innerText = '$' + total;
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = (total === 0);
+            if (submitBtn.disabled) {
+                submitBtn.style.background = '#ccc';
+            } else {
+                submitBtn.style.background = '#25D366';
+            }
         }
-      });
-      totalPriceSpan.textContent = '$' + total;
-    }
 
-    selects.forEach(sel => sel.addEventListener('change', calculateTotal));
-    calculateTotal();
-  </script>
+        recalculate();
+    </script>
 </body>
 </html>
