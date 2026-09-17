@@ -3,173 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EC Productions - 相片選購</title>
+    <title>{{ title }} - 相片選購</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
     <div class="header">
-        <h2 id="page-title">{{ student_title | default('相片選購') }}</h2>
+        <h2>{{ title }} {% if is_group %}(群組/班級相片){% else %}(學生個人相片){% endif %}</h2>
     </div>
 
-    <div class="container" id="gallery-container">
-        {% if albums %}
-            {% for album in albums %}
-                <div style="background: #e2e8f0; padding: 10px 15px; font-weight: bold; border-radius: 8px; margin-bottom: 10px; color: #1e293b;">
-                    📁 相簿：{{ album.title }}
+    <div class="container">
+        {% if photos %}
+        <form action="/cart/checkout" method="POST" id="order-form">
+            <input type="hidden" name="album_id" value="{{ album_id }}">
+            
+            {% for photo in photos %}
+            <div class="photo-card">
+                <img src="{{ photo.watermarked_url }}" alt="{{ photo.filename }}" loading="lazy">
+                <div class="photo-info">
+                    <div class="photo-title">檔案：{{ photo.filename }}</div>
+                    
+                    <!-- 隱藏欄位記錄這張照片勾選了哪些規格 -->
+                    <input type="hidden" name="selected_photos" value="{{ photo.filename }}">
+
+                    <!-- 依照您提供的真實 Excel 價格選項 -->
+                    <label class="option-label" id="label_{{ loop.index }}_1">
+                        <div><input type="checkbox" name="item_data" value="{{ photo.filename }}|5R過膠" onchange="toggleOption(this, 'label_{{ loop.index }}_1', 7)"> 5R 過膠</div>
+                        <div class="price-tag">$7</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ loop.index }}_2">
+                        <div><input type="checkbox" name="item_data" value="{{ photo.filename }}|5R過膠連框裱" onchange="toggleOption(this, 'label_{{ loop.index }}_2', 10)"> 5R 過膠連框裱</div>
+                        <div class="price-tag">$10</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ loop.index }}_3">
+                        <div><input type="checkbox" name="item_data" value="{{ photo.filename }}|8R過膠" onchange="toggleOption(this, 'label_{{ loop.index }}_3', 13)"> 8R 過膠</div>
+                        <div class="price-tag">$13</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ loop.index }}_4">
+                        <div><input type="checkbox" name="item_data" value="{{ photo.filename }}|8R過膠連框裱" onchange="toggleOption(this, 'label_{{ loop.index }}_4', 15)"> 8R 過膠連框裱</div>
+                        <div class="price-tag">$15</div>
+                    </label>
                 </div>
+            </div>
             {% endfor %}
-        {% endif %}
-        <div class="empty-state" id="loading-text">正在從雲端讀取您的專屬相片...</div>
-    </div>
 
-    <div class="cart-bar">
-        <div>
-            <div style="font-size: 12px; color: #666;">總計金額</div>
-            <div class="total-price" id="cart-total">$0</div>
-        </div>
-        <button class="checkout-btn" id="checkout-btn" onclick="checkoutToWhatsApp()" disabled>
-            📲 結帳與傳送
-        </button>
+            <div class="cart-bar">
+                <div>
+                    <div style="font-size: 12px; color: #666;">總計金額</div>
+                    <div class="total-price" id="cart-total">$0</div>
+                </div>
+                <button type="submit" class="checkout-btn" id="checkout-btn" disabled>
+                    📲 前往結帳
+                </button>
+            </div>
+        </form>
+        {% else %}
+            <div class="empty-state">📸 目前還沒有相片上傳喔！</div>
+        {% endif %}
     </div>
 
     <script>
-        const supabaseUrl = 'https://zrkyfuhbtrfeklltgbbc.supabase.co';
-        const supabaseKey = 'sb_secret_WNlxZs2qCbfB__XbKSj3hQ_8JOKALw1'; 
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        let totalPrice = 0;
+        let selectedCount = 0;
 
-        let cart = []; 
-        let albumTitle = "{{ student_title | default('相片選購') }}";
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-
-        async function loadData() {
-            if (!token) {
-                document.getElementById('gallery-container').innerHTML = '<div class="empty-state">⚠️ 錯誤：無效的專屬連結。請重新掃描卡片。</div>';
-                return;
-            }
-
-            try {
-                // 1. 取得相簿資訊
-                const { data: album, error: albumError } = await supabase.from('albums').select('*').eq('token', token).single();
-                if (albumError || !album) throw new Error('找不到相簿');
-                
-                albumTitle = album.title;
-                document.getElementById('page-title').innerText = `${album.title} (${album.kind === 'group' ? '群組相片' : '學生相片'})`;
-
-                // 2. 取得該相簿的相片
-                const { data: photos, error: photoError } = await supabase.from('photos').select('*').eq('album_id', album.id);
-                if (photoError) throw photoError;
-
-                renderGallery(photos);
-            } catch (err) {
-                console.error(err);
-                document.getElementById('gallery-container').innerHTML = '<div class="empty-state">⚠️ 目前該相簿尚未上傳任何相片。</div>';
-            }
-        }
-
-        function renderGallery(photos) {
-            const container = document.getElementById('gallery-container');
-            if (photos.length === 0) {
-                container.innerHTML = '<div class="empty-state">📸 目前還沒有相片上傳喔！</div>';
-                return;
-            }
-
-            let html = '';
-            photos.forEach(photo => {
-                html += `
-                <div class="photo-card">
-                    <img src="${photo.watermarked_url}" alt="${photo.filename}" loading="lazy">
-                    <div class="photo-info">
-                        <div class="photo-title">檔案：${photo.filename}</div>
-                        
-                        <label class="option-label" id="label_${photo.filename}_5R過膠">
-                            <div><input type="checkbox" onchange="toggleCart(this, '${photo.filename}', '5R過膠', 7)"> 5R 過膠</div>
-                            <div class="price-tag">$7</div>
-                        </label>
-                        
-                        <label class="option-label" id="label_${photo.filename}_5R過膠連框裱">
-                            <div><input type="checkbox" onchange="toggleCart(this, '${photo.filename}', '5R過膠連框裱', 10)"> 5R 過膠連框裱</div>
-                            <div class="price-tag">$10</div>
-                        </label>
-                        
-                        <label class="option-label" id="label_${photo.filename}_8R過膠">
-                            <div><input type="checkbox" onchange="toggleCart(this, '${photo.filename}', '8R過膠', 13)"> 8R 過膠</div>
-                            <div class="price-tag">$13</div>
-                        </label>
-                        
-                        <label class="option-label" id="label_${photo.filename}_8R過膠連框裱">
-                            <div><input type="checkbox" onchange="toggleCart(this, '${photo.filename}', '8R過膠連框裱', 15)"> 8R 過膠連框裱</div>
-                            <div class="price-tag">$15</div>
-                        </label>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function toggleCart(checkbox, filename, formatName, price) {
-            const uniqueId = `${filename}_${formatName}`;
-            const labelEl = document.getElementById(`label_${uniqueId}`);
-
+        function toggleOption(checkbox, labelId, price) {
+            const labelEl = document.getElementById(labelId);
             if (checkbox.checked) {
-                cart.push({ filename, formatName, price, id: uniqueId });
-                if(labelEl) labelEl.classList.add('selected');
+                totalPrice += price;
+                selectedCount += 1;
+                if (labelEl) labelEl.classList.add('selected');
             } else {
-                cart = cart.filter(item => item.id !== uniqueId);
-                if(labelEl) labelEl.classList.remove('selected');
-            }
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            let total = 0;
-            cart.forEach(item => total += item.price);
-            document.getElementById('cart-total').innerText = `$${total}`;
-            document.getElementById('checkout-btn').disabled = cart.length === 0;
-        }
-
-        function checkoutToWhatsApp() {
-            if (cart.length === 0) return;
-
-            let totalAmount = 0;
-            let orderDetails = {}; 
-            let summary = {};
-
-            cart.forEach(item => {
-                if (!orderDetails[item.filename]) orderDetails[item.filename] = [];
-                orderDetails[item.filename].push(item.formatName);
-                
-                if (!summary[item.formatName]) summary[item.formatName] = { count: 0, price: item.price };
-                summary[item.formatName].count += 1;
-                totalAmount += item.price;
-            });
-
-            let msg = `📸 *EC Productions 相片訂購單*\n`;
-            msg += `------------------------\n`;
-            msg += `對象：${albumTitle}\n\n`;
-            msg += `*📦 訂購明細：*\n`;
-
-            for (const [filename, formats] of Object.entries(orderDetails)) {
-                msg += `- ${filename} (${formats.join(", ")})\n`;
+                totalPrice -= price;
+                selectedCount -= 1;
+                if (labelEl) labelEl.classList.remove('selected');
             }
 
-            msg += `\n*💰 金額計算：*\n`;
-            for (const [format, data] of Object.entries(summary)) {
-                msg += `${format}: ${data.count} * $${data.price} = $${data.count * data.price}\n`;
-            }
-            msg += `------------------------\n`;
-            msg += `*總應付金額：$${totalAmount}*\n\n`;
-            msg += `(已附上付款截圖，請查收)`;
-
-            const whatsappNumber = "85292653339";
-            const encodedMsg = encodeURIComponent(msg);
-            window.location.href = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+            document.getElementById('cart-total').innerText = `$${totalPrice}`;
+            document.getElementById('checkout-btn').disabled = selectedCount === 0;
         }
-
-        loadData();
     </script>
 </body>
 </html>
