@@ -1,33 +1,129 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{{ student_title }} 的相簿 · EC Productions</title>
-  <link rel="stylesheet" href="/static/style.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ album.title }} - 相片選購</title>
+    <!-- 這裡使用 Flask 語法正確載入 static 資料夾裡的 style.css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="bar">
-    <h1>{{ student_title }} 的相簿</h1>
-    <form action="/logout" method="post"><button type="submit" class="btn-link">登出</button></form>
-  </header>
-  <main class="container" style="max-width: 1100px;">
-    <div class="grid">
-      {% for a in albums %}
-      <!-- 這裡就是關鍵！一定要連到 /gallery/album_id 才會進入選相畫面 -->
-      <a href="/gallery/{{ a.id }}" class="card album-card">
-        {% if a.cover %}
-        <img src="{{ a.cover }}" alt="{{ a.title }}" loading="lazy"/>
-        {% else %}
-        <div style="aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; background:#eaecf0;" class="muted">無相片</div>
-        {% endif %}
-        <div class="album-info">
-          <h2>{{ a.title }}</h2>
-          <p class="muted">{{ a.count }} 張相片 (點擊進入選相)</p>
-        </div>
-      </a>
-      {% endfor %}
+
+    <div class="header">
+        <h2>{{ album.title }} {% if album.kind == 'group' %}(群組/班級相片){% else %}(學生個人相片){% endif %}</h2>
     </div>
-  </main>
+
+    <div class="container">
+        {% if photos %}
+            {% for photo in photos %}
+            <div class="photo-card">
+                <img src="{{ photo.watermarked_url }}" alt="{{ photo.filename }}" loading="lazy">
+                <div class="photo-info">
+                    <div class="photo-title">檔案：{{ photo.filename }}</div>
+                    
+                    <label class="option-label" id="label_{{ photo.filename }}_5R過膠">
+                        <div><input type="checkbox" onchange="toggleCart(this, '{{ photo.filename }}', '5R過膠', 7)"> 5R 過膠</div>
+                        <div class="price-tag">$7</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ photo.filename }}_5R過膠連框裱">
+                        <div><input type="checkbox" onchange="toggleCart(this, '{{ photo.filename }}', '5R過膠連框裱', 10)"> 5R 過膠連框裱</div>
+                        <div class="price-tag">$10</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ photo.filename }}_8R過膠">
+                        <div><input type="checkbox" onchange="toggleCart(this, '{{ photo.filename }}', '8R過膠', 13)"> 8R 過膠</div>
+                        <div class="price-tag">$13</div>
+                    </label>
+                    
+                    <label class="option-label" id="label_{{ photo.filename }}_8R過膠連框裱">
+                        <div><input type="checkbox" onchange="toggleCart(this, '{{ photo.filename }}', '8R過膠連框裱', 15)"> 8R 過膠連框裱</div>
+                        <div class="price-tag">$15</div>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">📸 目前還沒有相片上傳喔！</div>
+        {% endif %}
+    </div>
+
+    <div class="cart-bar">
+        <div>
+            <div style="font-size: 12px; color: #666;">總計金額</div>
+            <div class="total-price" id="cart-total">$0</div>
+        </div>
+        <button class="checkout-btn" id="checkout-btn" onclick="checkoutToWhatsApp()" disabled>
+            📲 結帳與傳送
+        </button>
+    </div>
+
+    <script>
+        let cart = []; 
+        const albumTitle = "{{ album.title }}";
+
+        function toggleCart(checkbox, filename, formatName, price) {
+            const safeFilename = filename.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const uniqueId = `${safeFilename}_${formatName}`;
+            const labelId = `label_${filename}_${formatName}`;
+            const labelEl = document.getElementById(labelId);
+
+            if (checkbox.checked) {
+                cart.push({ filename, formatName, price, id: uniqueId });
+                if(labelEl) labelEl.classList.add('selected');
+            } else {
+                cart = cart.filter(item => item.id !== uniqueId);
+                if(labelEl) labelEl.classList.remove('selected');
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let total = 0;
+            cart.forEach(item => total += item.price);
+            
+            document.getElementById('cart-total').innerText = `$${total}`;
+            const btn = document.getElementById('checkout-btn');
+            btn.disabled = cart.length === 0;
+        }
+
+        function checkoutToWhatsApp() {
+            if (cart.length === 0) return;
+
+            let totalAmount = 0;
+            let orderDetails = {}; 
+            let summary = {};
+
+            cart.forEach(item => {
+                if (!orderDetails[item.filename]) orderDetails[item.filename] = [];
+                orderDetails[item.filename].push(item.formatName);
+                
+                if (!summary[item.formatName]) summary[item.formatName] = { count: 0, price: item.price };
+                summary[item.formatName].count += 1;
+                totalAmount += item.price;
+            });
+
+            let msg = `📸 *EC Productions 相片訂購單*\n`;
+            msg += `------------------------\n`;
+            msg += `對象：${albumTitle}\n\n`;
+            msg += `*📦 訂購明細：*\n`;
+
+            for (const [filename, formats] of Object.entries(orderDetails)) {
+                msg += `- ${filename} (${formats.join(", ")})\n`;
+            }
+
+            msg += `\n*💰 金額計算：*\n`;
+            for (const [format, data] of Object.entries(summary)) {
+                msg += `${format}: ${data.count} * $${data.price} = $${data.count * data.price}\n`;
+            }
+            msg += `------------------------\n`;
+            msg += `*總應付金額：$${totalAmount}*\n\n`;
+            msg += `(已附上付款截圖，請查收)`;
+
+            const whatsappNumber = "85292653339";
+            const encodedMsg = encodeURIComponent(msg);
+            window.location.href = `https://wa.me/${whatsappNumber}?text=${encodedMsg}`;
+        }
+    </script>
 </body>
 </html>
