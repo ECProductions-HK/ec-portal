@@ -1,32 +1,21 @@
-:root { --brand: #1d4ed8; --muted: #667085; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f4f5f7; color: #111827; }
-.bar { background: #fff; padding: 16px 24px; border-bottom: 1px solid #eaecf0; display: flex; justify-content: space-between; align-items: center; }
-.bar h1 { font-size: 18px; margin: 0; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 24px; max-width: 1100px; margin: 0 auto; }
-.card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-decoration: none; color: inherit; display: block; border: 1px solid #eaecf0; }
-.card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
-.album-info { padding: 12px; }
-.album-info h2 { font-size: 15px; margin: 0 0 4px 0; }
-.muted { color: var(--muted); font-size: 14px; margin: 0; }
-.center { display: flex; align-items: center; justify-content: center; height: 100vh; }
-.btn-link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit; font-weight: 500; }
-.sticky-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); box-shadow: 0 -4px 12px rgba(0,0,0,0.08); padding: 14px 16px; z-index: 100; }
-.content-between { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-.btn-primary { background: var(--brand); color: #fff; border: 0; border-radius: 999px; padding: 10px 24px; font: inherit; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.photo-card { position: relative; cursor: pointer; }
-.photo-label { display: block; position: relative; }
-.photo-checkbox { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; accent-color: var(--brand); z-index: 2; cursor: pointer; }
-.container { max-width: 600px; margin: 40px auto; padding: 0 16px; }
-.p-24 { padding: 24px; }
-.mt-12 { margin-top: 12px; }
-.mt-20 { margin-top: 20px; }
-.input-field { width: 100%; padding: 10px; border: 1px solid #d0d5dd; border-radius: 8px; font: inherit; margin-top: 6px; box-sizing: border-box; }
-.divider { border: 0; border-top: 1px solid #eaecf0; margin: 20px 0; }
-.payment-info { padding-left: 20px; color: var(--muted); font-size: 14px; }
-.text-center { text-align: center; }
-.options-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-.item-row { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; padding: 10px 14px; border-radius: 8px; border: 1px solid #eaecf0; gap: 10px; }
-.file-name { font-size: 14px; font-weight: 500; word-break: break-all; }
-.select-field { padding: 6px 10px; border-radius: 6px; border: 1px solid #d0d5dd; font: inherit; background: #fff; }
-.total-box { font-size: 18px; text-align: right; background: #f4f5f7; padding: 12px; border-radius: 8px; }
+/* static/style.css */
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang HK", "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; padding-bottom: 90px; color: #333; }
+.header { background: #2c3e50; color: white; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.header h2 { margin: 0; font-size: 18px; font-weight: 500; }
+.container { max-width: 600px; margin: 0 auto; padding: 12px; }
+
+.photo-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+.photo-card img { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; }
+.photo-info { padding: 16px; }
+.photo-title { font-weight: bold; margin-bottom: 12px; color: #2c3e50; font-size: 16px; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; }
+
+.option-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #444; background: #f8f9fa; padding: 10px 12px; border-radius: 8px; border: 1px solid #e9ecef; transition: all 0.2s; cursor: pointer; }
+.option-label.selected { background: #e8f5e9; border-color: #4caf50; }
+.option-label input[type="checkbox"] { transform: scale(1.3); margin-right: 12px; accent-color: #4caf50; cursor: pointer;}
+.price-tag { font-weight: bold; color: #e53935; }
+
+.cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px 20px; box-shadow: 0 -4px 12px rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom, 12px); }
+.total-price { font-size: 20px; font-weight: bold; color: #e53935; }
+.checkout-btn { background: #25D366; color: white; border: none; padding: 12px 24px; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(37,211,102,0.3); }
+.checkout-btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+.empty-state { text-align: center; padding: 40px 20px; color: #888; }
