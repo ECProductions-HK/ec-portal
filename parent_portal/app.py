@@ -27,8 +27,12 @@ app = FastAPI(title="EC Productions Parent Portal")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.cache = None
 
-if (BASE_DIR / "static").is_dir():
-    app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+static_dir = BASE_DIR / "static"
+if not static_dir.is_dir() and (BASE_DIR.parent / "static").is_dir():
+    static_dir = BASE_DIR.parent / "static"
+
+if static_dir.is_dir():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 def serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(SECRET_KEY, salt="ec-parent-session-v1")
