@@ -60,7 +60,7 @@ def qr_login(token: str, request: Request):
             "detail": "請確認卡片是否正確，或聯絡 EC Productions。"
         }, status_code=404)
     
-    resp = RedirectResponse("/gallery", status_code=302)
+    resp = RedirectResponse(f"/gallery/{album['id']}", status_code=302)
     session_data = {
         "album_id": album["id"], 
         "title": album["title"], 
