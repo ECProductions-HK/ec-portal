@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request, Response, Form, UploadFile,
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer
 from supabase import create_client, Client
 import uuid
 
@@ -20,6 +20,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "ec-production-super-secret-key-change
 SESSION_DAYS = 30
 COOKIE_NAME = "ec_session"
 
+# 公司接收 WhatsApp 訂單的電話號碼
 OPS_WHATSAPP = "85292653339"
 
 app = FastAPI(title="EC Productions Parent Portal")
@@ -78,17 +79,6 @@ def qr_login(token: str, request: Request):
         httponly=True, samesite="lax", path="/"
     )
     return resp
-
-@app.get("/gallery", response_class=HTMLResponse)
-def gallery(request: Request):
-    raw = request.cookies.get(COOKIE_NAME)
-    if not raw:
-        return RedirectResponse("/", status_code=302)
-    try:
-        session_data = serializer().loads(raw)
-    except:
-        return RedirectResponse("/", status_code=302)
-    return RedirectResponse(f"/gallery/{session_data['album_id']}", status_code=302)
 
 @app.get("/gallery/{album_id}", response_class=HTMLResponse)
 def album_page(album_id: str, request: Request):
@@ -154,6 +144,7 @@ async def order_submit(
     total_amount = 0
     parsed_items = []
 
+    # 解析前端傳來的選項與數量
     for entry in item_data:
         parts = entry.split("|")
         if len(parts) == 3:
@@ -171,7 +162,7 @@ async def order_submit(
         if qty <= 0:
             continue
         
-        # 依照最新 Excel 價格設定 ($7, $10, $13, $15)
+        # 精準對應 Excel 價格選項
         if opt == "5r_lam":
             price = 7
             opt_name = "5R過膠"
@@ -189,12 +180,15 @@ async def order_submit(
             opt_name = "5R過膠"
             
         total_amount += price * qty
+        # 將詳情存成結構化字典，供資料庫與 Excel 生成工具使用
         parsed_items.append({
             "filename": filename,
-            "option_name": f"{opt_name} x {qty}" if qty > 1 else opt_name,
+            "option_name": opt_name,  # 乾淨的名稱供統計
+            "qty": qty,               # 數量獨立
             "price": price * qty
         })
 
+    # 處理收據上傳
     receipt_filename = f"receipts/{uuid.uuid4()}_{receipt.filename}"
     receipt_bytes = await receipt.read()
     
@@ -204,8 +198,10 @@ async def order_submit(
     except Exception as e:
         receipt_url = "upload_failed_or_pending"
 
-    items_text_list = "\n".join([f"- {item['filename']} ({item['option_name']}) - ${item['price']} HKD" for item in parsed_items])
+    # 組裝 WhatsApp 發送明細文字
+    items_text_list = "\n".join([f"- {item['filename']} ({item['option_name']} x {item['qty']}) - ${item['price']} HKD" for item in parsed_items])
 
+    # 寫入 Supabase 資料庫，關鍵在於新增了 "items" 欄位供後勤腳本抓取
     try:
         supabase.table("orders").insert({
             "album_id": album_id,
@@ -213,7 +209,8 @@ async def order_submit(
             "total_amount": total_amount,
             "contact_phone": contact_phone,
             "receipt_url": receipt_url,
-            "payment_status": "pending_verification"
+            "payment_status": "pending_verification",
+            "items": parsed_items  # <--- 存入結構化陣列，Excel 自動化靠這個！
         }).execute()
     except Exception as e:
         print("DB order insert error:", e)
