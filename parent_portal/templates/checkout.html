@@ -20,7 +20,6 @@
         <form action="/order/submit" method="POST" enctype="multipart/form-data" id="order-form">
             <input type="hidden" name="album_id" value="{{ album_id }}">
 
-            <!-- 動態隱藏輸入框會在這裡生成並傳給後端 -->
             <div id="hidden-inputs-container"></div>
 
             {% for photo in selected_photos %}
@@ -31,48 +30,25 @@
                     <div class="qty-row">
                         <div><strong>5R 過膠</strong> <span style="color: #e53935; font-weight: bold;">($7)</span></div>
                         <select class="qty-select" data-photo="{{ photo }}" data-opt="5r_lam" data-price="7" onchange="recalculate()">
-                            <option value="0" selected>0 張</option>
-                            <option value="1">1 張</option>
-                            <option value="2">2 張</option>
-                            <option value="3">3 張</option>
-                            <option value="4">4 張</option>
-                            <option value="5">5 張</option>
+                            <option value="0" selected>0 張</option><option value="1">1 張</option><option value="2">2 張</option><option value="3">3 張</option><option value="4">4 張</option><option value="5">5 張</option>
                         </select>
                     </div>
-                    
                     <div class="qty-row">
                         <div><strong>5R 過膠連框裱</strong> <span style="color: #e53935; font-weight: bold;">($10)</span></div>
                         <select class="qty-select" data-photo="{{ photo }}" data-opt="5r_frame" data-price="10" onchange="recalculate()">
-                            <option value="0" selected>0 張</option>
-                            <option value="1">1 張</option>
-                            <option value="2">2 張</option>
-                            <option value="3">3 張</option>
-                            <option value="4">4 張</option>
-                            <option value="5">5 張</option>
+                            <option value="0" selected>0 張</option><option value="1">1 張</option><option value="2">2 張</option><option value="3">3 張</option><option value="4">4 張</option><option value="5">5 張</option>
                         </select>
                     </div>
-                    
                     <div class="qty-row">
                         <div><strong>8R 過膠</strong> <span style="color: #e53935; font-weight: bold;">($13)</span></div>
                         <select class="qty-select" data-photo="{{ photo }}" data-opt="8r_lam" data-price="13" onchange="recalculate()">
-                            <option value="0" selected>0 張</option>
-                            <option value="1">1 張</option>
-                            <option value="2">2 張</option>
-                            <option value="3">3 張</option>
-                            <option value="4">4 張</option>
-                            <option value="5">5 張</option>
+                            <option value="0" selected>0 張</option><option value="1">1 張</option><option value="2">2 張</option><option value="3">3 張</option><option value="4">4 張</option><option value="5">5 張</option>
                         </select>
                     </div>
-                    
                     <div class="qty-row">
                         <div><strong>8R 過膠連框裱</strong> <span style="color: #e53935; font-weight: bold;">($15)</span></div>
                         <select class="qty-select" data-photo="{{ photo }}" data-opt="8r_frame" data-price="15" onchange="recalculate()">
-                            <option value="0" selected>0 張</option>
-                            <option value="1">1 張</option>
-                            <option value="2">2 張</option>
-                            <option value="3">3 張</option>
-                            <option value="4">4 張</option>
-                            <option value="5">5 張</option>
+                            <option value="0" selected>0 張</option><option value="1">1 張</option><option value="2">2 張</option><option value="3">3 張</option><option value="4">4 張</option><option value="5">5 張</option>
                         </select>
                     </div>
                 </div>
@@ -81,6 +57,15 @@
 
             <div style="background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;">
                 <h3 style="margin-top: 0; font-size: 16px; color: #2c3e50;">聯絡與付款</h3>
+                
+                <!-- 🌟 智慧隱藏/顯示：只有群組相片才會要求填寫學生姓名 -->
+                {% if is_group %}
+                <div style="margin-bottom: 12px; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffe69c;">
+                    <label style="display: block; font-size: 14px; margin-bottom: 6px; font-weight: bold; color: #856404;">為方便學校派發，請填寫學生姓名：</label>
+                    <input type="text" name="student_name" required placeholder="例如: 陳大文 (1A 12號)" style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                </div>
+                {% endif %}
+
                 <div style="margin-bottom: 12px;">
                     <label style="display: block; font-size: 14px; margin-bottom: 6px; font-weight: bold;">WhatsApp 聯絡電話：</label>
                     <input type="text" name="contact_phone" required placeholder="例如: 91234567" style="width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
@@ -108,7 +93,7 @@
             const selects = document.querySelectorAll('.qty-select');
             let total = 0;
             const container = document.getElementById('hidden-inputs-container');
-            container.innerHTML = ''; // 清空舊的隱藏欄位
+            container.innerHTML = ''; 
 
             selects.forEach(sel => {
                 const qty = parseInt(sel.value);
@@ -131,11 +116,7 @@
             
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = (total === 0);
-            if (submitBtn.disabled) {
-                submitBtn.style.background = '#ccc';
-            } else {
-                submitBtn.style.background = '#25D366';
-            }
+            submitBtn.style.background = submitBtn.disabled ? '#ccc' : '#25D366';
         }
 
         recalculate();
