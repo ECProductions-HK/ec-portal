@@ -78,6 +78,19 @@ def qr_login(token: str, request: Request):
     )
     return resp
 
+# 🌟 修改點 1：完善 /gallery 的自動導向機制
+@app.get("/gallery", response_class=HTMLResponse)
+def gallery_redirect(request: Request):
+    raw = request.cookies.get(COOKIE_NAME)
+    if not raw:
+        return RedirectResponse("/", status_code=302)
+    try:
+        session_data = serializer().loads(raw)
+        # 直接導向專屬的相簿網址
+        return RedirectResponse(f"/gallery/{session_data['album_id']}", status_code=302)
+    except:
+        return RedirectResponse("/", status_code=302)
+
 @app.get("/gallery/{album_id}", response_class=HTMLResponse)
 def album_page(album_id: str, request: Request):
     raw = request.cookies.get(COOKIE_NAME)
@@ -128,7 +141,7 @@ async def order_submit(
     request: Request,
     album_id: str = Form(...),
     contact_phone: str = Form(...),
-    student_name: str = Form(""),  # 🌟 新增：接收可能為空的學生姓名
+    student_name: str = Form(""),
     receipt: UploadFile = File(...),
     item_data: list[str] = Form(...)
 ):
@@ -140,7 +153,6 @@ async def order_submit(
     except:
         return RedirectResponse("/", status_code=302)
 
-    # 🌟 智慧判斷：如果是群組相片，把家長填寫的姓名加上去
     is_group = session_data["kind"] == "group"
     final_student_title = session_data["title"]
     if is_group and student_name.strip():
@@ -204,7 +216,7 @@ async def order_submit(
     try:
         supabase.table("orders").insert({
             "album_id": album_id,
-            "student_title": final_student_title,  # 🌟 使用合併後的名字
+            "student_title": final_student_title,
             "total_amount": total_amount,
             "contact_phone": contact_phone,
             "receipt_url": receipt_url,
@@ -223,11 +235,13 @@ async def order_submit(
         f"轉帳收據截圖: {receipt_url}"
     )
 
+    # 🌟 修改點 2：加上 album_id，讓前端的成功頁面知道要返回哪個相簿
     return templates.TemplateResponse(request, "success.html", {
         "student_title": final_student_title,
         "total_amount": total_amount,
         "whatsapp_message": whatsapp_message,
-        "ops_whatsapp": OPS_WHATSAPP
+        "ops_whatsapp": OPS_WHATSAPP,
+        "album_id": album_id
     })
 
 @app.post("/logout")
