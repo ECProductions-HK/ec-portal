@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單管理後台 - EC Productions</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 24px; color: #2c3e50; }
+        .search-bar { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; font-size: 15px; outline: none; }
+        .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background-color: #f1f3f5; color: #495057; font-weight: 600; white-space: nowrap; }
+        tr:hover { background-color: #f8f9fa; }
+        .status-select { padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
+        .btn-update { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 5px; }
+        .receipt-link { color: #3498db; text-decoration: none; font-weight: bold; }
+        .receipt-link:hover { text-decoration: underline; }
+        .logout-btn { background: #e74c3c; color: white; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>📊 訂單管理系統 (CMS)</h1>
+        <a href="/admin/logout" class="logout-btn">登出</a>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <input type="text" id="searchInput" class="search-bar" onkeyup="filterTable()" placeholder="🔍 搜尋學生姓名、班級或電話...">
+    </div>
+
+    <div class="table-container">
+        <table id="ordersTable">
+            <thead>
+                <tr>
+                    <th>訂單時間</th>
+                    <th>學生 / 相簿</th>
+                    <th>聯絡電話</th>
+                    <th>總金額</th>
+                    <th>訂購明細</th>
+                    <th>轉帳收據</th>
+                    <th>付款狀態管理</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td style="color: #666;">{{ order.created_at[:16].replace('T', ' ') }}</td>
+                    <td style="font-weight: bold; color: #2c3e50;">{{ order.student_title }}</td>
+                    <td>{{ order.contact_phone }}</td>
+                    <td style="color: #e53935; font-weight: bold;">${{ order.total_amount }}</td>
+                    <td>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #555;">
+                            {% for item in order.items %}
+                            <li>{{ item.filename }} ({{ item.option_name }} x {{ item.qty }})</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        {% if order.receipt_url != 'upload_failed_or_pending' %}
+                        <a href="{{ order.receipt_url }}" target="_blank" class="receipt-link">查看截圖 ↗</a>
+                        {% else %}
+                        <span style="color: #999;">無收據</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="/admin/update_status" method="POST" style="display: flex; align-items: center;">
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <select name="new_status" class="status-select">
+                                <option value="pending_verification" {% if order.payment_status == 'pending_verification' %}selected{% endif %}>⏳ 待核對入數</option>
+                                <option value="paid" {% if order.payment_status == 'paid' %}selected{% endif %}>✅ 已付款 (處理中)</option>
+                                <option value="shipped" {% if order.payment_status == 'shipped' %}selected{% endif %}>📦 已派發相片</option>
+                                <option value="cancelled" {% if order.payment_status == 'cancelled' %}selected{% endif %}>❌ 已取消 / 廢單</option>
+                            </select>
+                            <button type="submit" class="btn-update">更新</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filterTable() {
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toUpperCase();
+            let table = document.getElementById("ordersTable");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let tdName = tr[i].getElementsByTagName("td")[1]; // 學生姓名欄位
+                let tdPhone = tr[i].getElementsByTagName("td")[2]; // 電話欄位
+                if (tdName || tdPhone) {
+                    let txtValueName = tdName.textContent || tdName.innerText;
+                    let txtValuePhone = tdPhone.textContent || tdPhone.innerText;
+                    if (txtValueName.toUpperCase().indexOf(filter) > -1 || txtValuePhone.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+    </script>
+</body>
+</html>
