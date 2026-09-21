@@ -54,10 +54,14 @@
                     <td style="color: #e53935; font-weight: bold;">${{ order.total_amount }}</td>
                     <td>
                         <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #555;">
-                            <!-- 🌟 修正點：使用 order['items'] -->
-                            {% for item in order['items'] %}
-                            <li>{{ item.filename }} ({{ item.option_name }} x {{ item.qty }})</li>
-                            {% endfor %}
+                            <!-- 🌟 加上防呆保護：確保 order['items'] 存在才跑迴圈 -->
+                            {% if order['items'] %}
+                                {% for item in order['items'] %}
+                                <li>{{ item.filename }} ({{ item.option_name }} x {{ item.qty }})</li>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: #999;">(舊單無明細記錄)</span>
+                            {% endif %}
                         </ul>
                     </td>
                     <td>
