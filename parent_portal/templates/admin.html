@@ -54,7 +54,8 @@
                     <td style="color: #e53935; font-weight: bold;">${{ order.total_amount }}</td>
                     <td>
                         <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #555;">
-                            {% for item in order.items %}
+                            <!-- 🌟 修正點：使用 order['items'] -->
+                            {% for item in order['items'] %}
                             <li>{{ item.filename }} ({{ item.option_name }} x {{ item.qty }})</li>
                             {% endfor %}
                         </ul>
@@ -92,8 +93,8 @@
             let tr = table.getElementsByTagName("tr");
 
             for (let i = 1; i < tr.length; i++) {
-                let tdName = tr[i].getElementsByTagName("td")[1]; // 學生姓名欄位
-                let tdPhone = tr[i].getElementsByTagName("td")[2]; // 電話欄位
+                let tdName = tr[i].getElementsByTagName("td")[1];
+                let tdPhone = tr[i].getElementsByTagName("td")[2];
                 if (tdName || tdPhone) {
                     let txtValueName = tdName.textContent || tdName.innerText;
                     let txtValuePhone = tdPhone.textContent || tdPhone.innerText;
