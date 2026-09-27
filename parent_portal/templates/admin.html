@@ -48,13 +48,15 @@
             <tbody>
                 {% for order in orders %}
                 <tr>
-                    <td style="color: #666;">{{ order.created_at[:16].replace('T', ' ') }}</td>
+                    <!-- 🌟 已更新：直接顯示 app.py 傳過來的香港時間 -->
+                    <td style="color: #666;">{{ order.created_at }}</td>
+                    
                     <td style="font-weight: bold; color: #2c3e50;">{{ order.student_title }}</td>
                     <td>{{ order.contact_phone }}</td>
                     <td style="color: #e53935; font-weight: bold;">${{ order.total_amount }}</td>
                     <td>
                         <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #555;">
-                            <!-- 🌟 加上防呆保護：確保 order['items'] 存在才跑迴圈 -->
+                            <!-- 防呆保護 -->
                             {% if order['items'] %}
                                 {% for item in order['items'] %}
                                 <li>{{ item.filename }} ({{ item.option_name }} x {{ item.qty }})</li>
