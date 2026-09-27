@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Request, Response, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,7 @@ SESSION_DAYS = 30
 COOKIE_NAME = "ec_session"
 OPS_WHATSAPP = "85292653339"
 
-# 🌟 新增：後台管理員設定
+# 🌟 後台管理員設定
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "ec2026admin") # 預設密碼
 ADMIN_COOKIE_NAME = "ec_admin_session"
 
@@ -266,6 +267,20 @@ def admin_dashboard(request: Request):
     try:
         res = supabase.table("orders").select("*").order("created_at", desc=True).execute()
         orders_data = res.data
+        
+        # 🌟 時間轉換處理：將 UTC 時間轉換為香港時間 (UTC+8)
+        for order in orders_data:
+            if order.get("created_at"):
+                try:
+                    # 清理尾部的時區符號，避免轉換報錯
+                    clean_time = order["created_at"].split("+")[0].split("Z")[0]
+                    utc_dt = datetime.fromisoformat(clean_time)
+                    hkt_dt = utc_dt + timedelta(hours=8)
+                    # 重新格式化為 YYYY-MM-DD HH:MM
+                    order["created_at"] = hkt_dt.strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    pass
+                    
     except Exception as e:
         orders_data = []
         print("Fetch orders error:", e)
